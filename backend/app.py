@@ -8,8 +8,18 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# 数据库配置 - 使用Render.com PostgreSQL
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL').replace("postgres://", "postgresql://", 1)
+# 数据库配置 - 根据环境选择数据库
+if os.environ.get('RENDER'):  # 在Render部署环境中
+    # 使用Render提供的PostgreSQL数据库
+    database_url = os.environ.get('DATABASE_URL')
+    if database_url and database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:  # 本地开发环境
+    # 使用SQLite数据库
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(base_dir, "app.db")}'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
