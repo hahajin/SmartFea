@@ -1,0 +1,12 @@
+.App {
+  text-align: center;
+}
+
+.panel {
+  height: 80vh;
+  overflow: hidden;
+}
+
+.truss-designer {
+  margin-top: 20px;
+}
