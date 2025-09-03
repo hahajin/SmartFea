@@ -1,6 +1,6 @@
 import React from 'react';
-import { createTheme } from '@mui/material/styles';
-import { ThemeProvider, CssBaseline } from '@mui/material';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { CssBaseline } from '@mui/material';
 import Header from './components/common/Header';
 import TrussDesigner from './components/TrussDesigner/TrussDesigner';
 import ErrorBoundary from './components/common/ErrorBoundary';
@@ -25,12 +25,10 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-      
         <div className="App">
           <Header />
           <TrussDesigner />
         </div>
-      
       </ThemeProvider>
     </ErrorBoundary>
   );

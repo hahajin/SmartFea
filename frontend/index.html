@@ -2,10 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Smart FEA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart FEA Debug</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    #root {
+      min-height: 100vh;
+    }
+    /* 添加一些基础样式确保可见 */
+    .App {
+      padding: 20px;
+      background-color: #f0f0f0;
+    }
+  </style>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="module" src="/src/app.jsx"></script>
+  <div id="root">
+    <!-- 如果React没有加载，这个文字会显示 -->
+    <div style="padding: 20px; background: yellow;">
+      <h2>Loading...</h2>
+      <p>如果你一直看到这个消息，说明React没有正确加载</p>
+    </div>
+  </div>
+  <script type="module" src="/src/main.jsx"></script>
+  
+  <script>
+    // 添加一些调试信息
+    console.log('HTML loaded');
+    console.log('Root element:', document.getElementById('root'));
+    
+    // 检查模块加载
+    window.addEventListener('error', (e) => {
+      console.error('Global error:', e.error);
+    });
+    
+    window.addEventListener('unhandledrejection', (e) => {
+      console.error('Unhandled promise rejection:', e.reason);
+    });
+  </script>
 </body>
 </html>

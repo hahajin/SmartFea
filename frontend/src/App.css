@@ -1,12 +1,60 @@
 .App {
   text-align: center;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .panel {
   height: 80vh;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .truss-designer {
   margin-top: 20px;
+  flex-grow: 1;
+}
+
+.chat-interface {
+  height: 100%;
+}
+
+.truss-visualization {
+  height: 100%;
+}
+
+.chat-messages {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.chat-input {
+  margin-top: auto;
+}
+
+.user-message {
+  background-color: #e3f2fd;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  padding: 8px;
+}
+
+.ai-response {
+  background-color: #f3e5f5;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  padding: 8px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .panel {
+    height: 60vh;
+  }
+  
+  .truss-designer {
+    margin-top: 10px;
+  }
 }
