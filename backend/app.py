@@ -4,9 +4,33 @@ from flask_sqlalchemy import SQLAlchemy
 import requests
 import json
 import os
+from dotenv import load_dotenv
+import time
+
+load_dotenv()  # 加载.env文件中的环境变量
 
 app = Flask(__name__)
 CORS(app)
+
+print("\nAI Agent Starting application...")
+print("--------------------------------------------------\n")
+# print(f"Environment Variables: {os.environ}\n")
+print(f"HF_API_KEY is: {'set' if os.environ.get('HF_API_KEY') else 'not set'}")
+print(f"RENDER is: {'set' if os.environ.get('RENDER') else 'not set'}")
+print(f"DATABASE_URL is: {'set' if os.environ.get('DATABASE_URL') else 'not set'}")
+print(f"DEBUG is: {'set' if os.environ.get('DEBUG') else 'not set'}")
+print(f"Current Working Directory: {os.getcwd()}")
+print(f"App Directory: {os.path.abspath(os.path.dirname(__file__))}")
+print(f"List of files in App Directory: {os.listdir(os.path.abspath(os.path.dirname(__file__)))}")
+print(f"List of files in Current Working Directory: {os.listdir(os.getcwd())}")
+print(f"Python Executable: {os.sys.executable}")
+print(f"Python Version: {os.sys.version}")
+# print(f"Flask Version: {Flask.__version__}")
+# print(f"SQLAlchemy Version: {SQLAlchemy.__version__}")
+# print(f"Requests Version: {requests.__version__}\n")
+print(f"JSON Module: {json.__version__ if hasattr(json, '__version__') else 'built-in module'}\n")
+print("Initialization complete.\n")
+print("--------------------------------------------------\n")
 
 # 数据库配置 - 根据环境选择数据库
 if os.environ.get('RENDER'):  # 在Render部署环境中
@@ -15,10 +39,14 @@ if os.environ.get('RENDER'):  # 在Render部署环境中
     if database_url and database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+
+    print(f"Using database URL: {app.config['SQLALCHEMY_DATABASE_URI']}")
 else:  # 本地开发环境
     # 使用SQLite数据库
     base_dir = os.path.abspath(os.path.dirname(__file__))
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(base_dir, "app.db")}'
+
+    print(f"Using SQLite database at: {app.config['SQLALCHEMY_DATABASE_URI']}")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -35,13 +63,30 @@ class Conversation(db.Model):
 
 # Hugging Face API配置
 HF_API_KEY = os.environ.get('HF_API_KEY')
-HF_API_URL = "https://api-inference.huggingface.co/models/microsoft/DialoGPT-large"
+# HF_API_URL = "https://api-inference.huggingface.co/models/microsoft/DialoGPT-large"
+# HF_API_URL = "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium"
+HF_API_URL = "https://api-inference.huggingface.co/models/microsoft/DialoGPT-small"
 
 headers = {"Authorization": f"Bearer {HF_API_KEY}"}
 
-def query_huggingface(payload):
-    response = requests.post(HF_API_URL, headers=headers, json=payload)
-    return response.json()
+
+def query_huggingface(payload, max_retries=5):
+    for attempt in range(max_retries):
+        try:
+            # 增加超时时间到60秒
+            response = requests.post(HF_API_URL, headers=headers, json=payload, timeout=60)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Attempt {attempt+1} failed: {e}")
+            if attempt < max_retries - 1:
+                # 等待时间指数增长
+                wait_time = (2 ** attempt) * 10
+                print(f"Waiting {wait_time} seconds before retrying...")
+                time.sleep(wait_time)
+            else:
+                print("All retries failed.")
+                return None
 
 # 桁架生成函数 - 根据AI响应生成桁架数据
 def generate_truss_data(description):
@@ -96,6 +141,9 @@ def chat():
         data = request.json
         user_id = data.get('user_id', 'default_user')
         message = data.get('message', '')
+
+        print(f"Received message from user {user_id}: {message}")
+        print(f"Hugging Face API Key: {HF_API_KEY is {'set' if HF_API_KEY else 'not set'}}")
         
         # 调用Hugging Face API
         hf_response = query_huggingface({
@@ -148,4 +196,17 @@ def get_history(user_id):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+
+    print("Testing Hugging Face API call...")
+
+    # 等待几秒钟让模型加载（如果需要）
+    time.sleep(10)
+
+    output = query_huggingface({
+        "inputs": "Hello, how are you?",
+        "parameters": {"max_length": 50}
+    })
+
+    print(f"Hugging Face API response: {output}")
+
     app.run(debug=os.environ.get('DEBUG', False))
