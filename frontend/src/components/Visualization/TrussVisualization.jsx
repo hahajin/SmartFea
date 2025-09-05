@@ -8,6 +8,7 @@ const TrussVisualization = () => {
   const plotRef = useRef(null);
   const { conversations } = useChatHistory();
   const [isPlotReady, setIsPlotReady] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     // Initialize empty plot

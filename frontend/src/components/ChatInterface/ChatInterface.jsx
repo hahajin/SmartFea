@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect  } from 'react';
 import {TextField,Button,List,ListItem,ListItemText,Typography,Divider,Box,Alert
 } from '@mui/material';
 import { Send as SendIcon } from '@mui/icons-material';
 import { useChatHistory } from '../../hooks/useChatHistory';
-import { sendMessage } from '../../services/api';
+import { sendMessage,checkHealth } from '../../services/api';
 import LoadingSpinner from '../common/LoadingSpinner';
 
 const ChatInterface = () => {
@@ -11,6 +11,29 @@ const ChatInterface = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const { conversations, addConversation, userId } = useChatHistory();
+  // 设置Ollama服务状态
+  const [isOllamaReady, setIsOllamaReady] = useState(false);
+
+  // 检查Ollama服务状态
+  useEffect(() => {
+    const checkOllama = async () => {
+      try {
+        const health = await checkHealth();
+        setIsOllamaReady(health.ollama);
+        console.log('Health check:', health);
+        
+        if (!health.ollama) {
+          setError('Ollama服务未就绪,请确保本地已运行Ollama');
+        }
+      } catch (error) {
+        console.error('Health check failed:', error);
+        setError('无法连接到后端服务');
+      }
+    };
+    
+    checkOllama();
+  }, []);
+
 
   const handleSendMessage = async () => {
     if (!message.trim() || isLoading) return;
@@ -18,8 +41,12 @@ const ChatInterface = () => {
     setIsLoading(true);
     setError(null);
     
+    console.log('Sending message to Ollama:', message);
+
     try {
-      const response = await sendMessage(userId, message);
+      // const response = await sendMessage(userId, message);
+      const response = await sendMessage(message);
+
       addConversation({
         message,
         response: response.response,
@@ -40,7 +67,13 @@ const ChatInterface = () => {
         桁架设计助手
       </Typography>
       <Divider />
-      
+
+      {!isOllamaReady && (
+        <Alert severity="warning" sx={{ mt: 1, mb: 1 }}>
+          Ollama服务未就绪,请确保已运行: <code>ollama serve</code> 和 <code>ollama pull qwen2:0.5b-instruct</code>
+        </Alert>
+      )}
+
       {error && (
         <Alert severity="error" sx={{ mt: 1, mb: 1 }} onClose={() => setError(null)}>
           {error}
@@ -101,7 +134,7 @@ const ChatInterface = () => {
         <TextField
           fullWidth
           variant="outlined"
-          placeholder="输入您的请求，例如：请帮我建立一个18m跨度，3m高度的平面桁架模型"
+          placeholder="Please enter your message..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyPress={(e) => {
